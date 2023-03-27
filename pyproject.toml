@@ -6,4 +6,21 @@ build-backend = "flit_core.buildapi"
 name = "cell2tcr"
 authors = [{name = "Lisa M Dratva", email = "ld21@sanger.ac.uk"}]
 readme = "README.md"
+# license = {file = "LICENSE"}
+# classifiers = ["XXX"]
 dynamic = ["version", "description"]
+dependencies = [
+    "numpy",
+    "pandas",
+    "scanpy",
+    "celltypist",
+    "tcrdist",
+    "igraph",
+    "leidenalg",
+    "matplotlib",
+    "logomaker",
+]
+requires-python = ">=3.8"
+
+[project.urls]
+Home = "https://github.com/Teichlab/cell2tcr"
