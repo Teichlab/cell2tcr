@@ -4,7 +4,7 @@ Inference of TCR motifs.
 
 ## Getting started
 
-See example use in [Cell2TCR.ipynb](cell2tcr.ipynb).
+See example use in [cell2tcr.ipynb](cell2tcr.ipynb).
 
 ## Installation
 
@@ -18,7 +18,7 @@ conda activate cell2tcr_env
 2. Install Cell2TCR from Github
 
 ```bash
-git clone git@github.com/Teichlab/Cell2TCR.git
+git clone git@github.com/teichlab/cell2tcr.git
 cd cell2tcr
 pip install .
 ```
