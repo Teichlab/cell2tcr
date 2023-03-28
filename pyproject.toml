@@ -14,7 +14,7 @@ dependencies = [
     "pandas",
     "scanpy",
     "celltypist",
-    "tcrdist",
+    "tcrdist3",
     "igraph",
     "leidenalg",
     "matplotlib",
