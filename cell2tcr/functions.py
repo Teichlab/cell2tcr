@@ -22,11 +22,11 @@ def motifs(df, sparse=True, threshold=35, chunk_size=3000, return_distances=Fals
     for i, j in zip(
         ['subject', 'cdr3_b_aa', 'v_b_gene', 'j_b_gene', 'cdr3_a_aa', 'v_a_gene', 'j_a_gene'],
         ['individual','IR_VDJ_1_junction_aa','IR_VDJ_1_v_call','IR_VDJ_1_j_call','IR_VJ_1_junction_aa','IR_VJ_1_v_call','IR_VJ_1_j_call']):
-        df[i] = df[j]
+        df.loc[:,i] = df.loc[:,j]
 
     # add generic allele suffix
     for genes in ['v_b_gene', 'j_b_gene', 'v_a_gene', 'j_a_gene']:
-        df[genes] = df[genes].astype(str) + '*01'
+        df.loc[:,genes] = df.loc[:,genes].astype(str) + '*01'
 
     # load gene list
     tcrdist_genes = pd.read_csv(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'alphabeta_gammadelta_db.tsv'), sep='\t')
@@ -41,7 +41,7 @@ def motifs(df, sparse=True, threshold=35, chunk_size=3000, return_distances=Fals
                 raise Exception(f'VDJ gene {gene} not found in alphabeta_gammadelta_db.txt, tcrdist will error out!')
 
     # compute unique clone_id
-    df['clone_id'] = df.groupby(['subject','cdr3_b_aa', 'v_b_gene', 'j_b_gene', 'cdr3_a_aa', 'v_a_gene', 'j_a_gene'], sort=False).ngroup()
+    df.loc[:,'clone_id'] = df.groupby(['subject','cdr3_b_aa', 'v_b_gene', 'j_b_gene', 'cdr3_a_aa', 'v_a_gene', 'j_a_gene'], sort=False).ngroup()
     
     r = threshold # distance threshold
     
