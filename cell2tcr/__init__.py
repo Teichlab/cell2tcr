@@ -1,6 +1,3 @@
 """TCR motif inference"""
-
-from . import draw_cdr3
-from . import tcrdist_motifs
-
-__version__ = "0.1"
+__version__ = '0.1'
+__all__ = ['tcrdist_motif', 'draw_cdr3']
