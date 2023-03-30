@@ -6,8 +6,7 @@ build-backend = "flit_core.buildapi"
 name = "cell2tcr"
 authors = [{name = "Lisa M Dratva", email = "ld21@sanger.ac.uk"}]
 readme = "README.md"
-# license = {file = "LICENSE"}
-# classifiers = ["XXX"]
+license = {file = "LICENSE"}
 dynamic = ["version", "description"]
 dependencies = [
     "numpy",
