@@ -8,7 +8,7 @@ import os
 import matplotlib.pyplot as plt
 import logomaker
 
-def motifs(df, sparse=True, threshold=35, chunk_size=3000, return_distances=False):
+def motifs(df, sparse=True, threshold=35, chunk_size=3000, return_distances=False, add_suffix=True):
     '''
     Compute and cluster the TCR distance matrix.
     
@@ -17,6 +17,7 @@ def motifs(df, sparse=True, threshold=35, chunk_size=3000, return_distances=Fals
     threshold : int. Threshold used to connect TCR distance matrix.
     chunk_size : int. Number of rows loaded into memory for sparse implementation.
     return_distances: bool. Whether to return the tcrdist object that also holds the distances, or modify the initial dataframe with the new column 'motif' in-place.
+    add_suffix: bool. Whether to add generic *01 suffix to gene names. 
     '''
     # add tcrdist-compatible column names
     for i, j in zip(
@@ -25,8 +26,9 @@ def motifs(df, sparse=True, threshold=35, chunk_size=3000, return_distances=Fals
         df.loc[:,i] = df.loc[:,j]
 
     # add generic allele suffix
-    for genes in ['v_b_gene', 'j_b_gene', 'v_a_gene', 'j_a_gene']:
-        df.loc[:,genes] = df.loc[:,genes].astype(str) + '*01'
+    if add_suffix:
+        for genes in ['v_b_gene', 'j_b_gene', 'v_a_gene', 'j_a_gene']:
+            df.loc[:,genes] = df.loc[:,genes].astype(str) + '*01'
 
     # load gene list
     tcrdist_genes = pd.read_csv(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'alphabeta_gammadelta_db.tsv'), sep='\t')
