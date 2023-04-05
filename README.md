@@ -1,6 +1,6 @@
-# Cell2TCR
+<p align="left"><img src="https://user-images.githubusercontent.com/22446690/230076528-655a571b-6516-4315-b310-36e0d43cfe31.png" width="400"></p>
 
-Inference of TCR motifs.
+Cell2TCR is a tool for inference of T cell receptor (TCR) motifs. A TCR motif describes a group of TCRs with sufficient sequence similarity to likely recognise a common epitope.
 
 ## Getting started
 
