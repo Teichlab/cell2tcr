@@ -144,12 +144,8 @@ def draw_cdr3(df, skip_singletons=False, savefig_title=None, put_title=True, tra
         letters = np.unique(pd.DataFrame([list(x) for x in cdr3[chain]])).tolist()
         logo = pd.DataFrame(np.zeros((n_rows, len(letters))), columns=letters)
         for row in range(n_rows):
-            try:
-                vals = pd.DataFrame([list(x) for x in cdr3[chain]]).value_counts([row], normalize=True).reset_index()
-                logo.loc[row, vals[row]] = vals[0].values
-            except:
-                vals = pd.DataFrame([list(x) for x in cdr3[chain]]).value_counts([0], normalize=True)
-                logo.loc[row, vals.index[0]] = vals.values
+            vals = pd.DataFrame([list(x) for x in cdr3[chain]]).value_counts([row], normalize=True).reset_index(name='prop')
+            logo.loc[row, vals[row]] = vals['prop'].values
 
         # plot logo
         logo_plt = logomaker.Logo(logo, color_scheme='chemistry', ax=ax[chain_ind])
