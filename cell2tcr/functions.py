@@ -137,7 +137,7 @@ def draw_cdr3(df, skip_singletons=False, savefig_title=None, put_title=True, tra
     for chain_ind, chain in enumerate([cdr3_vj_aa,cdr3_vdj_aa]):
         cdr3 = df[[cdr3_vj_aa,cdr3_vdj_aa]].copy()
         cdr3['length'] = cdr3[chain].apply(lambda x: len(x))
-        n_rows = cdr3.length.median().astype(int)
+        n_rows = cdr3.length.mode()[0]
         cdr3 = cdr3[cdr3.length==n_rows]
 
         # AA frequencies for logo
