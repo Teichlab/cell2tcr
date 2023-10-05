@@ -18,7 +18,7 @@ conda activate cell2tcr_env
 2. Install Cell2TCR from Github
 
 ```bash
-git clone git@github.com/teichlab/cell2tcr.git
+git clone https://github.com/Teichlab/cell2tcr.git
 cd cell2tcr
 pip install .
 ```
