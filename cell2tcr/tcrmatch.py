@@ -806,7 +806,7 @@ def tcrmatch(
     return scores_df
 
 
-def annotate(df, tcrmatch_df, cdr3_column, sep=";", repl_sep=","):
+def annotate(df, tcrmatch_df, cdr3_column, sep=";", repl_sep=",", multi_score=False):
     """
     Transfer the obtained TCRMatch hits back to the original data frame
     housing initial CDR3 query information.
@@ -831,12 +831,19 @@ def annotate(df, tcrmatch_df, cdr3_column, sep=";", repl_sep=","):
     repl_sep : ``str``, optional (default: ``","``)
         If ``sep`` is encountered in the values of ``tcrmatch_df``,
         replace it with this value prior to the collapsing.
+    multi_score : ``bool``, optional (default: ``False``)
+        Whether to fill in score info on more than one match in case
+        several matches are found. By default, only the highest scoring 
+        match is filled in.
     """
     # do a deep copy of the input scores DF to avoid disrupting it
     tdf = tcrmatch_df.copy(deep=True)
     # turn any encountered instances of the separator with the replacement separator
     # regex needs to be true as this is replacing characters in strings
     tdf = tdf.replace({sep: repl_sep}, regex=True)
+    if not multi_score:
+        # only keep highest scoring entry
+        tdf = tdf.sort_values('score', ascending=False).drop_duplicates('input_sequence')
     for col in tdf.columns[1:]:
         # construct a simple pd.Series of this particular column collapsed on CDR3 input
         # in case of multiple hits, they are joined with the separator
@@ -845,5 +852,9 @@ def annotate(df, tcrmatch_df, cdr3_column, sep=";", repl_sep=","):
         )
         # can use this series to map hit information to the original sequences
         # add as extra column in input df
-        df[col] = df[cdr3_column].map(mapper)
+        df.loc[:,col] = df.loc[:,cdr3_column].map(mapper)
+    if not multi_score:
+        # if several epitopes map to same TCR, only keep the first
+        for col in ['epitope','antigen','organism']:
+            df_match[col] = df_match[col].str.split(',', expand=True)[0]
     return df
