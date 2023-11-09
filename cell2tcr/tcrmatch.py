@@ -806,7 +806,7 @@ def db_match(
     return scores_df
 
 
-def db_annotate(df, tcrmatch_df, cdr3_column, sep=";", repl_sep=",", multi_score=False):
+def db_annotate(df, scores, cdr3_column, sep=";", repl_sep=",", multi_score=False):
     """
     Transfer the obtained TCRMatch hits back to the original data frame
     housing initial CDR3 query information.
@@ -820,7 +820,7 @@ def db_annotate(df, tcrmatch_df, cdr3_column, sep=";", repl_sep=",", multi_score
     df : ``pd.DataFrame``
         With CDR3 query sequences used for ``tcrmatch.tcrmatch()``
         present as one of the columns.
-    tcrmatch_df : ``pd.DataFrame``
+    scores : ``pd.DataFrame``
         ``tcrmatch.tcrmatch()`` output.
     cdr3_column : ``str``
         Column of ``df`` with CDR3 query information.
@@ -829,7 +829,7 @@ def db_annotate(df, tcrmatch_df, cdr3_column, sep=";", repl_sep=",", multi_score
         delimiter when populating information into the original data
         frame.
     repl_sep : ``str``, optional (default: ``","``)
-        If ``sep`` is encountered in the values of ``tcrmatch_df``,
+        If ``sep`` is encountered in the values of ``scores``,
         replace it with this value prior to the collapsing.
     multi_score : ``bool``, optional (default: ``False``)
         Whether to fill in score info on more than one match in case
@@ -837,7 +837,7 @@ def db_annotate(df, tcrmatch_df, cdr3_column, sep=";", repl_sep=",", multi_score
         match is filled in.
     """
     # do a deep copy of the input scores DF to avoid disrupting it
-    tdf = tcrmatch_df.copy(deep=True)
+    tdf = scores.copy(deep=True)
     # turn any encountered instances of the separator with the replacement separator
     # regex needs to be true as this is replacing characters in strings
     tdf = tdf.replace({sep: repl_sep}, regex=True)
@@ -856,5 +856,5 @@ def db_annotate(df, tcrmatch_df, cdr3_column, sep=";", repl_sep=",", multi_score
     if not multi_score:
         # if several epitopes map to same TCR, only keep the first
         for col in ['epitope','antigen','organism']:
-            df_match[col] = df_match[col].str.split(',', expand=True)[0]
+            df[col] = df[col].str.split(',', expand=True)[0]
     return df
