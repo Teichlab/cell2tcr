@@ -645,7 +645,7 @@ def db_match(
     match_score=0.97,
     n_threads=10,
     temp_in="tcrmatch_input.txt",
-    temp_out="tcrmatch_output.tsv",
+    temp_out="tcrmatch_output.tsv"
 ):
     """
     Compute TCRMatch scores, either via the original C++ binary or a
@@ -806,7 +806,7 @@ def db_match(
     return scores_df
 
 
-def annotate(df, tcrmatch_df, cdr3_column, sep=";", repl_sep=",", multi_score=False):
+def db_annotate(df, tcrmatch_df, cdr3_column, sep=";", repl_sep=",", multi_score=False):
     """
     Transfer the obtained TCRMatch hits back to the original data frame
     housing initial CDR3 query information.
