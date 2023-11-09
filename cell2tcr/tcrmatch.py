@@ -519,7 +519,7 @@ def self_k3_parallel(seq_df, n_threads=10):
 
 
 def compute_score_levenshtein(
-    ind1, seq1in, ind2, seq2in, levenshtein_threshold=3, tcrmatch_score=0.97
+    ind1, seq1in, ind2, seq2in, levenshtein_threshold=3, match_score=0.97
 ):
     """
     Try to compute the score for a pair of AA sequences, but do a
@@ -555,14 +555,14 @@ def compute_score_levenshtein(
     if Levenshtein.distance(seq1, seq2) <= levenshtein_threshold:
         k3 = compute_k3(seq1, seq2)
         score = k3 / np.sqrt(seq1k3 * seq2k3)
-        if score > tcrmatch_score:
+        if score > match_score:
             # just return the indices and the score for now
             return [ind1, ind2, score]
     # if the return is not hit, a None falls out
 
 
 def compute_score_levenshtein_singlecdr(
-    ind1, seq1in, seq2k3s, levenshtein_threshold=3, tcrmatch_score=0.97
+    ind1, seq1in, seq2k3s, levenshtein_threshold=3, match_score=0.97
 ):
     """
     Compute TCRMatch scores with Levenshtein filtering for a single
@@ -589,7 +589,7 @@ def compute_score_levenshtein_singlecdr(
     # pass index too for minimal output construction
     for ind2, seq2in in enumerate(seq2k3s):
         score = compute_score_levenshtein(
-            ind1, seq1in, ind2, seq2in, levenshtein_threshold, tcrmatch_score
+            ind1, seq1in, ind2, seq2in, levenshtein_threshold, match_score
         )
         # we don't care about Nones
         # in fact, they're actively harmful en masse by gunking up RAM
@@ -598,23 +598,23 @@ def compute_score_levenshtein_singlecdr(
     return scores
 
 
-def _scores_pool_init(_seq2k3s, _levenshtein_threshold, _tcrmatch_score):
-    global seq2k3s, levenshtein_threshold, tcrmatch_score
+def _scores_pool_init(_seq2k3s, _levenshtein_threshold, _match_score):
+    global seq2k3s, levenshtein_threshold, match_score
     seq2k3s = _seq2k3s
     levenshtein_threshold = _levenshtein_threshold
-    tcrmatch_score = _tcrmatch_score
+    match_score = _match_score
 
 
 def pool_compute_score_levenshtein(ind1, seq1k3):
     # make use of the globals created in _scores_pool_init
     # require less input to be ferried from the map
     return compute_score_levenshtein_singlecdr(
-        ind1, seq1k3, seq2k3s, levenshtein_threshold, tcrmatch_score
+        ind1, seq1k3, seq2k3s, levenshtein_threshold, match_score
     )
 
 
 def paired_scores_parallel(
-    seq1k3s, seq2k3s, levenshtein_threshold=3, tcrmatch_score=0.97, n_threads=10
+    seq1k3s, seq2k3s, levenshtein_threshold=3, match_score=0.97, n_threads=10
 ):
     # turn innards of DFs to lists of lists for speed
     with mp.Pool(
@@ -623,7 +623,7 @@ def paired_scores_parallel(
         (
             seq2k3s.iloc[:, [0, -1]].values.tolist(),
             levenshtein_threshold,
-            tcrmatch_score,
+            match_score,
         ),
     ) as pool:
         # pass index of CDR3 along with seq and self-K3
@@ -636,13 +636,13 @@ def paired_scores_parallel(
     return [item for sublist in scores for item in sublist]
 
 
-def tcrmatch(
+def db_match(
     seqs,
     iedb,
     tcrmatch=None,
     trim=True,
     levenshtein_threshold=3,
-    tcrmatch_score=0.97,
+    match_score=0.97,
     n_threads=10,
     temp_in="tcrmatch_input.txt",
     temp_out="tcrmatch_output.tsv",
@@ -676,7 +676,7 @@ def tcrmatch(
         The Python implementation will only compute the TCRMatch score
         for a pair of sequences if their Levenshtein distance is at
         most this much.
-    tcrmatch_score : ``float``, optional (default: 0.97)
+    match_score : ``float``, optional (default: 0.97)
         Sequence pairs will be reported as a hit if their score is
         greater than this threshold. Matches C++ binary default.
     n_threads : ``int``, optional (default: 10)
@@ -721,7 +721,7 @@ def tcrmatch(
             + " -k -i "
             + temp_in
             + " -s "
-            + str(tcrmatch_score)
+            + str(match_score)
             + " -t "
             + str(n_threads)
             + " -d "
@@ -767,7 +767,7 @@ def tcrmatch(
             seqs_k3s,
             iedb_k3s,
             levenshtein_threshold=levenshtein_threshold,
-            tcrmatch_score=tcrmatch_score,
+            match_score=match_score,
             n_threads=n_threads,
         )
         # turn the metadata data frames to lists of lists for speed
