@@ -697,7 +697,7 @@ def tcrmatch(
     )
     if invalid_count > 0:
         raise ValueError(
-            str(input_count)
+            str(invalid_count)
             + " input CDR3s have characters outside of ARNDCQEGHILKMFPSTWYV"
         )
     # trim input sequences to match what tcrmatch does internally by default
