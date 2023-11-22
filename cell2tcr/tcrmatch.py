@@ -639,13 +639,10 @@ def paired_scores_parallel(
 def db_match(
     seqs,
     iedb,
-    tcrmatch=None,
     trim=True,
     levenshtein_threshold=3,
     match_score=0.97,
     n_threads=10,
-    temp_in="tcrmatch_input.txt",
-    temp_out="tcrmatch_output.tsv"
 ):
     """
     Compute TCRMatch scores, either via the original C++ binary or a
@@ -662,16 +659,12 @@ def db_match(
     iedb : path
         Path to the TCRMatch-formatted IEDB database, can be downloaded
         from ``https://downloads.iedb.org/misc/TCRMatch/IEDB_data.tsv``.
-    tcrmatch : path, optional (default: ``None``)
-        Path to compiled TCRMatch C++ binary. If ``None``, will use
-        Python reimplementation.
     trim : ``bool``, optional (default: ``True``)
         By default, the TCRMatch C++ binary removes the flanking AAs of
         query sequences if they start with ``C`` and end with ``F`` or
         ``W``. Setting ``trim`` to ``True`` will mirror this behaviour.
         If ``False``, will copy the raw input sequences to the
-        ``trimmed_input_sequence`` column of the output. Trimming is
-        disabled if calling the C++ binary from the wrapper.
+        ``trimmed_input_sequence`` column of the output.
     levenshtein_threshold : ``int``, optional (default: 3)
         The Python implementation will only compute the TCRMatch score
         for a pair of sequences if their Levenshtein distance is at
@@ -680,14 +673,7 @@ def db_match(
         Sequence pairs will be reported as a hit if their score is
         greater than this threshold. Matches C++ binary default.
     n_threads : ``int``, optional (default: 10)
-        Number of threads to use in the computation, used by both the
-        C++ binary and Python reimplementation.
-    temp_in : path, optional (default: ``tcrmatch_input.txt``)
-        If using the C++ binary, file name to write the CDR3 input to.
-        Will be deleted upon successful execution.
-    temp_out : path, optional (default: ``tcrmatch_output.tsv``)
-        If using the C++ binary, file name to write the output to. Will
-        be deleted upon successful execution.
+        Number of threads to use in the computation.
     """
     # convert input to list of unique sequences
     seqs = list(np.unique(seqs))
@@ -711,98 +697,55 @@ def db_match(
     else:
         # just use the unmodified input
         seqs_trimmed = seqs.copy()
-    if tcrmatch is not None:
-        # prepare input in file form
-        with open(temp_in, "w") as fid:
-            fid.writelines([i + "\n" for i in seqs_trimmed])
-        # -k means skip the trimming, as this was already decided python side
-        os.system(
-            tcrmatch
-            + " -k -i "
-            + temp_in
-            + " -s "
-            + str(match_score)
-            + " -t "
-            + str(n_threads)
-            + " -d "
-            + iedb
-            + " > "
-            + temp_out
-        )
-        # read output df and remove temporary files
-        scores_df = pd.read_table(temp_out, index_col=False)
-        os.remove(temp_in)
-        os.remove(temp_out)
-        # we did the trimming python side, reflect that in column names
-        scores_df.rename(
-            columns={"input_sequence": "trimmed_input_sequence"}, inplace=True
-        )
-        # convert the trimmed sequence to the original input sequence
-        # and append into the data frame for easy locating of input
-        seqs_map = pd.Series(seqs, index=seqs_trimmed)
-        scores_df["input_sequence"] = scores_df["trimmed_input_sequence"].map(seqs_map)
-        scores_df = scores_df[
-            [
-                "input_sequence",
-                "trimmed_input_sequence",
-                "match_sequence",
-                "score",
-                "receptor_group",
-                "epitope",
-                "antigen",
-                "organism",
-            ]
+
+    seqs_df = pd.DataFrame(zip(seqs_trimmed, seqs))
+    iedb_df = pd.read_table(iedb, index_col=False)
+    # reshuffle columns of IEDB DF to match tcrmatch output
+    iedb_df = iedb_df.iloc[:, [0, 2, 3, 5, 4]]
+    # compute self-K3 scores for both the queries and IEDB
+    iedb_k3s = self_k3_parallel(iedb_df, n_threads=n_threads)
+    seqs_k3s = self_k3_parallel(seqs_df, n_threads=n_threads)
+    # get super minimal hit table - index in seqs/iedb and score
+    scores = paired_scores_parallel(
+        seqs_k3s,
+        iedb_k3s,
+        levenshtein_threshold=levenshtein_threshold,
+        match_score=match_score,
+        n_threads=n_threads,
+    )
+    # turn the metadata data frames to lists of lists for speed
+    # strip out the k3s which seem to have made their way to the original dfs
+    seqs_list = seqs_df.values[:, :2].tolist()
+    iedb_list = iedb_df.values[:, :5].tolist()
+    # pull out matching metadata for each hit
+    scores_meta_list = []
+    for hit in scores:
+        scores_meta_list.append(seqs_list[hit[0]] + iedb_list[hit[1]] + [hit[2]])
+    # reorder the columns to match what falls out of tcrmatch, plus untrimmed input at the start
+    scores_df = pd.DataFrame(
+        scores_meta_list,
+        columns=[
+            "trimmed_input_sequence",
+            "input_sequence",
+            "match_sequence",
+            "receptor_group",
+            "epitope",
+            "antigen",
+            "organism",
+            "score",
+        ],
+    )[
+        [
+            "input_sequence",
+            "trimmed_input_sequence",
+            "match_sequence",
+            "score",
+            "receptor_group",
+            "epitope",
+            "antigen",
+            "organism",
         ]
-        return scores_df
-    else:
-        seqs_df = pd.DataFrame(zip(seqs_trimmed, seqs))
-        iedb_df = pd.read_table(iedb, index_col=False)
-        # reshuffle columns of IEDB DF to match tcrmatch output
-        iedb_df = iedb_df.iloc[:, [0, 2, 3, 5, 4]]
-        # compute self-K3 scores for both the queries and IEDB
-        iedb_k3s = self_k3_parallel(iedb_df, n_threads=n_threads)
-        seqs_k3s = self_k3_parallel(seqs_df, n_threads=n_threads)
-        # get super minimal hit table - index in seqs/iedb and score
-        scores = paired_scores_parallel(
-            seqs_k3s,
-            iedb_k3s,
-            levenshtein_threshold=levenshtein_threshold,
-            match_score=match_score,
-            n_threads=n_threads,
-        )
-        # turn the metadata data frames to lists of lists for speed
-        # strip out the k3s which seem to have made their way to the original dfs
-        seqs_list = seqs_df.values[:, :2].tolist()
-        iedb_list = iedb_df.values[:, :5].tolist()
-        # pull out matching metadata for each hit
-        scores_meta_list = []
-        for hit in scores:
-            scores_meta_list.append(seqs_list[hit[0]] + iedb_list[hit[1]] + [hit[2]])
-        # reorder the columns to match what falls out of tcrmatch, plus untrimmed input at the start
-        scores_df = pd.DataFrame(
-            scores_meta_list,
-            columns=[
-                "trimmed_input_sequence",
-                "input_sequence",
-                "match_sequence",
-                "receptor_group",
-                "epitope",
-                "antigen",
-                "organism",
-                "score",
-            ],
-        )[
-            [
-                "input_sequence",
-                "trimmed_input_sequence",
-                "match_sequence",
-                "score",
-                "receptor_group",
-                "epitope",
-                "antigen",
-                "organism",
-            ]
-        ]
+    ]
     return scores_df
 
 
