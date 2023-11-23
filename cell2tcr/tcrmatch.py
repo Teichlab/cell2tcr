@@ -645,11 +645,9 @@ def db_match(
     n_threads=10,
 ):
     """
-    Compute TCRMatch scores, either via the original C++ binary or a
-    Python reimplementation, of a set of CDR3 AA sequences against
-    the IEDB database. Returns a data frame formatted like the C++
-    tool's output, with an extra column with the raw input sequence
-    at the start.
+    Compute TCRMatch scores of a set of CDR3 AA sequences against
+    the IEDB database. Returns a data frame  with an extra column 
+    with the raw input sequence at the start.
 
     Input
     -----
@@ -660,18 +658,16 @@ def db_match(
         Path to the TCRMatch-formatted IEDB database, can be downloaded
         from ``https://downloads.iedb.org/misc/TCRMatch/IEDB_data.tsv``.
     trim : ``bool``, optional (default: ``True``)
-        By default, the TCRMatch C++ binary removes the flanking AAs of
-        query sequences if they start with ``C`` and end with ``F`` or
-        ``W``. Setting ``trim`` to ``True`` will mirror this behaviour.
+        By default, removes the flanking AAs of query sequences if 
+        they start with ``C`` and end with ``F`` or ``W``. 
         If ``False``, will copy the raw input sequences to the
         ``trimmed_input_sequence`` column of the output.
     levenshtein_threshold : ``int``, optional (default: 3)
-        The Python implementation will only compute the TCRMatch score
-        for a pair of sequences if their Levenshtein distance is at
-        most this much.
+        Only compute the TCRMatch score if their Levenshtein distance is 
+        at most this much.
     match_score : ``float``, optional (default: 0.97)
         Sequence pairs will be reported as a hit if their score is
-        greater than this threshold. Matches C++ binary default.
+        greater than this threshold.
     n_threads : ``int``, optional (default: 10)
         Number of threads to use in the computation.
     """
