@@ -11,7 +11,7 @@ See example use in [cell2tcr.ipynb](cell2tcr.ipynb).
 1. Create a new conda environment
 
 ```
-conda create --name cell2tcr_env
+conda create --name cell2tcr_env python=3.10
 conda activate cell2tcr_env
 ```
 
