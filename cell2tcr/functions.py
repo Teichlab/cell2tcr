@@ -122,7 +122,7 @@ def draw_cdr3(
     df : pd.DataFrame. Needs to have fields 'subject', 'clone_id', 'cdr3_a/g_aa', 'cdr3_b/d_aa'. Draws the CDR3 alpha and beta logo over all the entries in df, using the most common length. Can handle both alpha beta and gamma delta TCRs.
     skip_singletons : bool. Whether to skip motifs comprised of a single clone.
     savefig_title : None or str. If provided, save figure in savedir and using given title.
-    put_title : bool. Whether to display the title.
+    put_title : bool|str. Whether to display any title, and optionally a user-defined title.
     transparent : bool. Make background transparent (e.g. for saving the figure).
     remove_duplicate_clones : bool. Remove clone_id duplicates before plotting.
     '''
@@ -141,7 +141,6 @@ def draw_cdr3(
         if n_clones == 1:
             return
     fig, ax = plt.subplots(ncols=2, figsize=(10,1))
-    title =  f'Shared by: {n_shared},  Unique clones: {n_clones}'
     if remove_duplicate_clones:
         df_ = df.drop_duplicates('clone_id')
     else:
@@ -164,7 +163,11 @@ def draw_cdr3(
         logo_plt.ax.grid(False)
         logo_plt.ax.axis(False)
     if put_title:
-        plt.suptitle(title, y=1.2, x=0.6)
+        if isinstance(put_title, str):
+            plt.suptitle(put_title, y=1.2, x=0.6)
+        else:
+            # use default title
+            plt.suptitle(f'Shared by: {n_shared},  Unique clones: {n_clones}', y=1.2, x=0.6)
     if savefig_title is not None:
         plt.savefig(savefig_title, transparent=transparent)
     plt.show()
