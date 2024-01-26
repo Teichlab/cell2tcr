@@ -110,13 +110,21 @@ def motifs(df, sparse=True, threshold=35, chunk_size=3000, return_distances=Fals
         # assign motif to each original cell
         df['motif'] = df.clone_id.map(tr.clone_df[['clone_id','motif']].set_index('clone_id').motif.to_dict())
 
-def draw_cdr3(df, skip_singletons=False, savefig_title=None, put_title=True, transparent=False):
+def draw_cdr3(
+        df, 
+        skip_singletons=False, 
+        savefig_title=None, 
+        put_title=True, 
+        transparent=False,
+        remove_duplicate_clones=False,
+        ):
     '''
     df : pd.DataFrame. Needs to have fields 'subject', 'clone_id', 'cdr3_a/g_aa', 'cdr3_b/d_aa'. Draws the CDR3 alpha and beta logo over all the entries in df, using the most common length. Can handle both alpha beta and gamma delta TCRs.
     skip_singletons : bool. Whether to skip motifs comprised of a single clone.
     savefig_title : None or str. If provided, save figure in savedir and using given title.
     put_title : bool. Whether to display the title.
     transparent : bool. Make background transparent (e.g. for saving the figure).
+    remove_duplicate_clones : bool. Remove clone_id duplicates before plotting.
     '''
     if hasattr(df, 'cdr3_a_aa') and hasattr(df, 'cdr3_b_aa'):
         # Alpha beta TCR 
@@ -134,8 +142,12 @@ def draw_cdr3(df, skip_singletons=False, savefig_title=None, put_title=True, tra
             return
     fig, ax = plt.subplots(ncols=2, figsize=(10,1))
     title =  f'Shared by: {n_shared},  Unique clones: {n_clones}'
+    if remove_duplicate_clones:
+        df_ = df.drop_duplicates('clone_id')
+    else:
+        df_ = df
     for chain_ind, chain in enumerate([cdr3_vj_aa,cdr3_vdj_aa]):
-        cdr3 = df[[cdr3_vj_aa,cdr3_vdj_aa]].copy()
+        cdr3 = df_[[cdr3_vj_aa,cdr3_vdj_aa]].copy()
         cdr3['length'] = cdr3[chain].apply(lambda x: len(x))
         n_rows = cdr3.length.mode()[0]
         cdr3 = cdr3[cdr3.length==n_rows]
