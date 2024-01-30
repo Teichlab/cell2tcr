@@ -135,7 +135,7 @@ def draw_cdr3(
         cdr3_vj_aa = 'cdr3_g_aa'
         cdr3_vdj_aa = 'cdr3_d_aa'
     else:
-        raise 'No cdr3_aa found.'
+        raise AttributeError('No cdr3_aa found.')
     n_shared, n_clones = df.nunique()[['subject','clone_id']].values
     if skip_singletons:
         if n_clones == 1:
