@@ -638,7 +638,7 @@ def paired_scores_parallel(
 
 def db_match(
     seqs,
-    iedb,
+    iedb=None,
     trim=True,
     levenshtein_threshold=3,
     match_score=0.97,
@@ -654,7 +654,7 @@ def db_match(
     seqs : ``list`` of ``str``
         AA sequences of the CDR3s of interest, must be restricted to
         ``"ARNDCQEGHILKMFPSTWYV"`` characters.
-    iedb : path
+    iedb : ``str``, optional (default: ``None``)
         Path to the TCRMatch-formatted IEDB database, can be downloaded
         from ``https://downloads.iedb.org/misc/TCRMatch/IEDB_data.tsv``.
     trim : ``bool``, optional (default: ``True``)
@@ -695,6 +695,8 @@ def db_match(
         seqs_trimmed = seqs.copy()
 
     seqs_df = pd.DataFrame(zip(seqs_trimmed, seqs))
+    if iedb is None:
+        iedb = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'IEDB_data.tsv')
     iedb_df = pd.read_table(iedb, index_col=False)
     # reshuffle columns of IEDB DF to match tcrmatch output
     iedb_df = iedb_df.iloc[:, [0, 2, 3, 5, 4]]
