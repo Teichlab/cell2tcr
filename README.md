@@ -12,10 +12,13 @@ conda activate cell2tcr_env
 ```
 
 2. Install Cell2TCR from Github
+Check out the branch ```db_extension``` to perform integrated IEDB.org queries. 
 
 ```bash
 git clone https://github.com/Teichlab/cell2tcr.git
 cd cell2tcr
+git fetch origin
+git checkout db_extension
 pip install .
 ```
 
