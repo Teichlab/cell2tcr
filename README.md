@@ -28,3 +28,8 @@ pip install .
 ```
 python -m ipykernel install --user --name cell2tcr_env
 ```
+
+## Human SARS-CoV-2 challenge uncovers local and systemic response dynamics
+[Published in Nature 19.06.2024](https://doi.org/10.1038/s41586-024-07575-x)
+
+Rik G. H. Lindeboom*, Kaylee B. Worlock*, Lisa M. Dratva, Masahiro Yoshida, David Scobie, Helen R. Wagstaffe, Laura Richardson, Anna Wilbrey-Clark, Josephine L. Barnes, Lorenz Kretschmer, Krzysztof Polanski, Jessica Allen-Hyttinen, Puja Mehta, Dinithi Sumanaweera, Jacqueline M. Boccacino, Waradon Sungnak, Rasa Elmentaite, Ni Huang, Lira Mamanova, Rakesh Kapuge, Liam Bolt, Elena Prigmore, Ben Killingley, Mariya Kalinova, Maria Mayer, Alison Boyers, Alex Mann, Leo Swadling, Maximillian N. J. Woodall, Samuel Ellis, Claire M. Smith, Vitor H. Teixeira, Sam M. Janes, Rachel C. Chambers, Muzlifah Haniffa, Andrew Catchpole, Robert Heyderman, Mahdad Noursadeghi, Benny Chain, Andreas Mayer, Kerstin B. Meyer, Christopher Chiu, Marko Z. Nikolić† & Sarah A. Teichmann†
