@@ -8,6 +8,29 @@ import os
 import matplotlib.pyplot as plt
 import logomaker
 
+def assign_column_names(df, subject='donor_id', cdr3_b_aa='IR_VDJ_1_junction_aa', v_b_gene='IR_VDJ_1_v_call', j_b_gene='IR_VDJ_1_j_call', cdr3_a_aa='IR_VJ_1_junction_aa', v_a_gene='IR_VJ_1_v_call', j_a_gene='IR_VJ_1_j_call'):
+    '''
+    Make column names  tcrdist3-compatible. Modifies the dataframe in-place.
+    
+    df : pd.DataFrame. Needs to have the fields for donor, CDR3 gene calls and CDR3 sequence specified in the function call.
+    subject : str. Name of column distinguishing different donors.
+    cdr3_b_aa : str. Name of column holding TCR-beta CDR3 amino acid sequences.
+    v_b_gene : str. Name of column holding TCR-beta V gene calls.
+    j_b_gene : str. Name of column holding TCR-beta J gene calls.
+    cdr3_a_aa : str. Name of column holding TCR-alpha CDR3 amino acid sequences.
+    v_a_gene : str. Name of column holding TCR-alpha V gene calls.
+    j_a_gene : str. Name of column holding TCR-alpha J gene calls. 
+    '''
+    missing = [column for column in [subject, cdr3_b_aa, v_b_gene, j_b_gene, cdr3_a_aa, v_a_gene, j_a_gene] if not column in df.columns]
+    if missing:
+        raise KeyError(f'Columns {missing} not found in dataframe - check spelling.')
+    # add tcrdist-compatible column names
+    for i, j in zip(
+        ['subject', 'cdr3_b_aa', 'v_b_gene', 'j_b_gene', 'cdr3_a_aa', 'v_a_gene', 'j_a_gene'],
+        [subject, cdr3_b_aa, v_b_gene, j_b_gene, cdr3_a_aa, v_a_gene, j_a_gene]):
+        df.loc[:,i] = df.loc[:,j]
+    # TODO : test the input argument order was not mixed up by user
+
 def motifs(df, sparse=True, threshold=35, chunk_size=3000, return_distances=False, add_suffix=True):
     '''
     Compute and cluster the TCR distance matrix.
@@ -19,11 +42,10 @@ def motifs(df, sparse=True, threshold=35, chunk_size=3000, return_distances=Fals
     return_distances: bool. Whether to return the tcrdist object that also holds the distances, or modify the initial dataframe with the new column 'motif' in-place.
     add_suffix: bool. Whether to add generic *01 suffix to gene names. 
     '''
-    # add tcrdist-compatible column names
-    for i, j in zip(
-        ['subject', 'cdr3_b_aa', 'v_b_gene', 'j_b_gene', 'cdr3_a_aa', 'v_a_gene', 'j_a_gene'],
-        ['individual','IR_VDJ_1_junction_aa','IR_VDJ_1_v_call','IR_VDJ_1_j_call','IR_VJ_1_junction_aa','IR_VJ_1_v_call','IR_VJ_1_j_call']):
-        df.loc[:,i] = df.loc[:,j]
+    # check relevant columns are present
+    missing = [column for column in ['subject', 'cdr3_b_aa', 'v_b_gene', 'j_b_gene', 'cdr3_a_aa', 'v_a_gene', 'j_a_gene'] if not column in df.columns]
+    if missing:
+        raise KeyError(f'Columns {missing} not found in dataframe - did you run cell2tcr.assign_column_names?')
 
     # add generic allele suffix
     if add_suffix:
