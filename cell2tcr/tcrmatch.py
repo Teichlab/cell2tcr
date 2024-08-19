@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 import os
 import re
+import tqdm
 
 # implementation based on https://github.com/IEDB/TCRMatch/blob/master/src/tcrmatch.cpp
 # matrix hardcoded in original implementation
@@ -613,6 +614,11 @@ def pool_compute_score_levenshtein(ind1, seq1k3):
     )
 
 
+def pool_compute_score_levenshtein_star(args):
+    # helper function to use tqdm during computation
+    return pool_compute_score_levenshtein(*args)
+
+
 def paired_scores_parallel(
     seq1k3s, seq2k3s, levenshtein_threshold=3, match_score=0.97, n_threads=10
 ):
@@ -627,9 +633,14 @@ def paired_scores_parallel(
         ),
     ) as pool:
         # pass index of CDR3 along with seq and self-K3
-        scores = pool.starmap(
-            pool_compute_score_levenshtein,
-            enumerate(seq1k3s.iloc[:, [0, -1]].values.tolist()),
+        args = seq1k3s.iloc[:, [0, -1]].values.tolist()
+        scores = list( # need the initial list for tqdm to finish
+            tqdm.tqdm( 
+                pool.imap(
+                    pool_compute_score_levenshtein_star,
+                    enumerate(args)
+                ), total=len(args)
+            )
         )
     # this creates a list of lists, flatten to a single level
     # lists within the original lists of lists will remain unharmed
