@@ -31,6 +31,9 @@ python -m ipykernel install --user --name cell2tcr_env
 ```
 import cell2tcr
 
+# check relevant columns are present and properly named
+cell2tcr.assign_column_names(df)
+
 # infer motifs
 cell2tcr.motifs(df)
 
