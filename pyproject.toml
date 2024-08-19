@@ -16,6 +16,7 @@ dependencies = [
     "tcrdist3",
     "igraph",
     "leidenalg",
+    "levenshtein",
     "matplotlib",
     "logomaker",
 ]
