@@ -31,7 +31,7 @@ def assign_column_names(df, subject='donor_id', cdr3_b_aa='IR_VDJ_1_junction_aa'
         df.loc[:,i] = df.loc[:,j]
     # TODO : test the input argument order was not mixed up by user
 
-def motifs(df, sparse=True, threshold=35, chunk_size=3000, return_distances=False, add_suffix=True):
+def motifs(df, sparse=True, threshold=35, chunk_size=3000, return_distances=False, add_suffix=True, organism='human'):
     '''
     Compute and cluster the TCR distance matrix.
     
@@ -41,6 +41,7 @@ def motifs(df, sparse=True, threshold=35, chunk_size=3000, return_distances=Fals
     chunk_size : int. Number of rows loaded into memory for sparse implementation.
     return_distances: bool. Whether to return the tcrdist object that also holds the distances, or modify the initial dataframe with the new column 'motif' in-place.
     add_suffix: bool. Whether to add generic *01 suffix to gene names. 
+    organism: str. Choose between 'human' and 'mouse'. 
     '''
     # check relevant columns are present
     missing = [column for column in ['subject', 'cdr3_b_aa', 'v_b_gene', 'j_b_gene', 'cdr3_a_aa', 'v_a_gene', 'j_a_gene'] if not column in df.columns]
@@ -72,7 +73,7 @@ def motifs(df, sparse=True, threshold=35, chunk_size=3000, return_distances=Fals
     if sparse:
         tr = TCRrep(
             cell_df = df.drop_duplicates(subset = 'clone_id'),
-            organism = 'human', 
+            organism = organism, 
             chains = ['alpha', 'beta'], 
             compute_distances = False, # sparse
             deduplicate = False,
