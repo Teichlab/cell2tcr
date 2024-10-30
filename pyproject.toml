@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "cell2tcr"
-authors = [{name = "Lisa M Dratva", email = "ld21@sanger.ac.uk"}]
+authors = [{name = "Lisa M Dratva", email = "LMD76@cam.ac.uk"}]
 readme = "README.md"
 license = {file = "LICENSE"}
 dynamic = ["version", "description"]
