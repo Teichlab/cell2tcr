@@ -8,86 +8,111 @@ import os
 import matplotlib.pyplot as plt
 import logomaker
 
-def assign_column_names(df, subject='donor_id', cdr3_b_aa='IR_VDJ_1_junction_aa', v_b_gene='IR_VDJ_1_v_call', j_b_gene='IR_VDJ_1_j_call', cdr3_a_aa='IR_VJ_1_junction_aa', v_a_gene='IR_VJ_1_v_call', j_a_gene='IR_VJ_1_j_call'):
+def assign_column_names(df, donor_id='donor_id', vdj_aa='IR_VDJ_1_junction_aa', vdj_v='IR_VDJ_1_v_call', vdj_j='IR_VDJ_1_j_call', vj_aa='IR_VJ_1_junction_aa', vj_v='IR_VJ_1_v_call', vj_j='IR_VJ_1_j_call'):
     '''
     Make column names  tcrdist3-compatible. Modifies the dataframe in-place.
     
     df : pd.DataFrame. Needs to have the fields for donor, CDR3 gene calls and CDR3 sequence specified in the function call.
-    subject : str. Name of column distinguishing different donors.
-    cdr3_b_aa : str. Name of column holding TCR-beta CDR3 amino acid sequences.
-    v_b_gene : str. Name of column holding TCR-beta V gene calls.
-    j_b_gene : str. Name of column holding TCR-beta J gene calls.
-    cdr3_a_aa : str. Name of column holding TCR-alpha CDR3 amino acid sequences.
-    v_a_gene : str. Name of column holding TCR-alpha V gene calls.
-    j_a_gene : str. Name of column holding TCR-alpha J gene calls. 
+    donor_id : str. Name of column distinguishing different donors.
+    vdj_aa : str. Name of column holding TCR-beta/delta CDR3 amino acid sequences.
+    vdj_v : str. Name of column holding TCR-beta/delta V gene calls.
+    vdj_j : str. Name of column holding TCR-beta/delta J gene calls.
+    vj_aa : str. Name of column holding TCR-alpha/gamma CDR3 amino acid sequences.
+    vj_v : str. Name of column holding TCR-alpha/gamma V gene calls.
+    vj_j : str. Name of column holding TCR-alpha/gamma J gene calls. 
     '''
-    missing = [column for column in [subject, cdr3_b_aa, v_b_gene, j_b_gene, cdr3_a_aa, v_a_gene, j_a_gene] if not column in df.columns]
+    missing = [column for column in [donor_id, vdj_aa, vdj_v, vdj_j, vj_aa, vj_v, vj_j] if not column in df.columns]
     if missing:
         raise KeyError(f'Columns {missing} not found in dataframe - check spelling.')
     # add tcrdist-compatible column names
     for i, j in zip(
-        ['subject', 'cdr3_b_aa', 'v_b_gene', 'j_b_gene', 'cdr3_a_aa', 'v_a_gene', 'j_a_gene'],
-        [subject, cdr3_b_aa, v_b_gene, j_b_gene, cdr3_a_aa, v_a_gene, j_a_gene]):
+        ['donor_id', 'vdj_aa', 'vdj_v', 'vdj_j', 'vj_aa', 'vj_v', 'vj_j'],
+        [donor_id, vdj_aa, vdj_v, vdj_j, vj_aa, vj_v, vj_j]):
         df.loc[:,i] = df.loc[:,j]
     # TODO : test the input argument order was not mixed up by user
 
-def motifs(df, sparse=True, threshold=35, chunk_size=3000, return_distances=False, add_suffix=True, organism='human'):
+def motifs(df, sparse=True, threshold=35, chunk_size=3000, return_distances=False, add_suffix=True, organism='human', receptor_type='ab', db_file='alphabeta_gammadelta_db.tsv'):
     '''
-    Compute and cluster the TCR distance matrix.
+    Compute and cluster the TCR distance matrix. Compatible with alpha-beta and gamma-delta T cells.
     
-    df : pd.DataFrame. Needs to have fields 'individual', 'IR_VDJ_1_junction_aa', 'IR_VDJ_1_v_call', 'IR_VDJ_1_j_call', 'IR_VJ_1_junction_aa', 'IR_VJ_1_v_call', 'IR_VJ_1_j_call'.
+    df : pd.DataFrame. Needs to have fields 'donor_id', 'vdj_aa', 'vdj_v', 'vdj_j', 'vj_aa', 'vj_v', 'vj_j'.
     sparse : bool. Select sparse=True implementation if more than ~1000 TCR clones are given.
     threshold : int. Threshold used to connect TCR distance matrix.
     chunk_size : int. Number of rows loaded into memory for sparse implementation.
     return_distances: bool. Whether to return the tcrdist object that also holds the distances, or modify the initial dataframe with the new column 'motif' in-place.
     add_suffix: bool. Whether to add generic *01 suffix to gene names. 
     organism: str. Choose between 'human' and 'mouse'. 
+    receptor_type: str. Choose between 'ab' and 'gd' for alpha-beta or gamma-delta T cells. 
+    db_file: str. Choose between the built-in 'alphabeta_gammadelta_db.tsv', 'combo_xcr_2024-03-05.tsv', or load your own tsv. 
     '''
     # check relevant columns are present
-    missing = [column for column in ['subject', 'cdr3_b_aa', 'v_b_gene', 'j_b_gene', 'cdr3_a_aa', 'v_a_gene', 'j_a_gene'] if not column in df.columns]
+    missing = [column for column in ['donor_id', 'vdj_aa', 'vdj_v', 'vdj_j', 'vj_aa', 'vj_v', 'vj_j'] if not column in df.columns]
     if missing:
         raise KeyError(f'Columns {missing} not found in dataframe - did you run cell2tcr.assign_column_names?')
 
     # add generic allele suffix
     if add_suffix:
-        for genes in ['v_b_gene', 'j_b_gene', 'v_a_gene', 'j_a_gene']:
+        for genes in ['vdj_v', 'vdj_j', 'vj_v', 'vj_j']:
             df.loc[:,genes] = df.loc[:,genes].astype(str) + '*01'
 
     # load gene list
-    tcrdist_genes = pd.read_csv(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'alphabeta_gammadelta_db.tsv'), sep='\t')
+    if os.path.isfile(db_file):
+        tcrdist_genes = pd.read_csv(db_file, sep='\t')
+    elif os.path.isfile(os.path.join(os.path.dirname(os.path.realpath(__file__)), db_file)):
+        tcrdist_genes = pd.read_csv(os.path.join(os.path.dirname(os.path.realpath(__file__)), db_file), sep='\t')
+    else:
+        FileNotFoundError(f'Provide a valid db_file or choose one from "alphabeta_gammadelta_db.tsv","combo_xcr_2024-03-05.tsv". You provided: {db_file}')
     
     # check which genes are not found in tcrdist list
-    for gene in df[['v_b_gene', 'j_b_gene', 'v_a_gene', 'j_a_gene']].unstack().unique():
+    for gene in df[['vdj_v', 'vdj_j', 'vj_v', 'vj_j']].unstack().unique():
         if gene not in tcrdist_genes.id.values:
             # try quick fix
             if gene.replace('DV','/DV') in tcrdist_genes.id.values:
                 df.replace(gene, gene.replace('DV','/DV'), inplace=True)
             else:
-                raise Exception(f'VDJ gene {gene} not found in alphabeta_gammadelta_db.txt, tcrdist will error out!')
+                raise Exception(f'VDJ gene {gene} not found in {db_file}, tcrdist will error out!')
 
     # compute unique clone_id
-    df.loc[:,'clone_id'] = df.groupby(['subject','cdr3_b_aa', 'v_b_gene', 'j_b_gene', 'cdr3_a_aa', 'v_a_gene', 'j_a_gene'], sort=False).ngroup()
+    df.loc[:,'clone_id'] = df.groupby(['donor_id','vdj_aa', 'vdj_v', 'vdj_j', 'vj_aa', 'vj_v', 'vj_j'], sort=False).ngroup()
     
     r = threshold # distance threshold
+    
+    if receptor_type == 'ab':
+        chains = ['alpha', 'beta']
+        new_cols = {'cdr3_a_aa':'vj_aa', 'cdr3_b_aa':'vdj_aa', 'v_b_gene':'vdj_v', 'j_b_gene':'vdj_j', 'v_a_gene':'vj_v', 'j_a_gene':'vj_j',}
+    
+    elif receptor_type == 'gd':
+        chains = ['gamma', 'delta']
+        new_cols = {'cdr3_g_aa':'vj_aa', 'cdr3_d_aa':'vdj_aa', 'v_d_gene':'vdj_v', 'j_d_gene':'vdj_j', 'v_g_gene':'vj_v', 'j_g_gene':'vj_j',}
+    else:
+        raise ValueError(f'receptor_type {receptor_type} not valid - choose among "ab" and "gd" for alpha-beta or gamma-delta T cells')
+    
+    # make tcrdist-compatible
+    df.rename(columns = {v: k for k, v in new_cols.items()}, inplace=True)
     
     if sparse:
         tr = TCRrep(
             cell_df = df.drop_duplicates(subset = 'clone_id'),
             organism = organism, 
-            chains = ['alpha', 'beta'], 
+            chains = chains, 
             compute_distances = False, # sparse
             deduplicate = False,
             infer_index_cols = False,
             index_cols = ['clone_id'],
-            cpus=24)
+            cpus=24,
+        )
 
 
         # modify chunk_size depending on RAM
         tr.compute_sparse_rect_distances(radius = r, chunk_size = chunk_size)
 
         # get chains and set diagonal to 0
-        a = tr.rw_alpha.copy()
-        b = tr.rw_beta.copy()
+        if receptor_type == 'ab':
+            a = tr.rw_alpha.copy()
+            b = tr.rw_beta.copy()
+        else:
+            a = tr.rw_gamma.copy()
+            b = tr.rw_delta.copy()
         a.setdiag(0)
         b.setdiag(0)
 
@@ -115,23 +140,29 @@ def motifs(df, sparse=True, threshold=35, chunk_size=3000, return_distances=Fals
         tr = TCRrep(
             cell_df = df.drop_duplicates(subset = 'clone_id'),
             organism = 'human', 
-            chains = ['alpha', 'beta'], 
+            chains = chains, 
             compute_distances = True, # dense
             deduplicate = False,
             infer_index_cols = False,
             index_cols = ['clone_id'],
             cpus=24)
-        g = igraph.Graph.Adjacency((tr.pw_alpha+tr.pw_beta) < r)
+        if receptor_type == 'ab':
+            g = igraph.Graph.Adjacency((tr.pw_alpha+tr.pw_beta) < r)
+        else:
+            g = igraph.Graph.Adjacency((tr.pw_gamma+tr.pw_delta) < r)
+            
     
     # Leiden clustering
     partition = leidenalg.find_partition(g, leidenalg.RBConfigurationVertexPartition, resolution_parameter=1, seed=1)
     tr.clone_df['motif'] = pd.DataFrame(partition.membership).values
     
     if return_distances:
+        tr.clone_df.rename(columns = {v: k for k, v in new_cols.items()}, inplace=True) 
         return tr
     else:
         # assign motif to each original cell
         df['motif'] = df.clone_id.map(tr.clone_df[['clone_id','motif']].set_index('clone_id').motif.to_dict())
+        df.rename(columns = new_cols, inplace=True) 
 
 def draw_cdr3(
         df, 
@@ -142,24 +173,17 @@ def draw_cdr3(
         remove_duplicate_clones=False,
         ):
     '''
-    df : pd.DataFrame. Needs to have fields 'subject', 'clone_id', 'cdr3_a/g_aa', 'cdr3_b/d_aa'. Draws the CDR3 alpha and beta logo over all the entries in df, using the most common length. Can handle both alpha beta and gamma delta TCRs.
+    df : pd.DataFrame. Needs to have fields 'donor_id', 'clone_id', 'vj_aa', 'vdj_aa'. Draws the CDR3 alpha and beta logo over all the entries in df, using the most common length. Can handle both alpha beta and gamma delta TCRs.
     skip_singletons : bool. Whether to skip motifs comprised of a single clone.
     savefig_title : None or str. If provided, save figure in savedir and using given title.
     put_title : bool|str. Whether to display any title, and optionally a user-defined title.
     transparent : bool. Make background transparent (e.g. for saving the figure).
     remove_duplicate_clones : bool. Remove clone_id duplicates before plotting.
     '''
-    if hasattr(df, 'cdr3_a_aa') and hasattr(df, 'cdr3_b_aa'):
-        # Alpha beta TCR 
-        cdr3_vj_aa = 'cdr3_a_aa'
-        cdr3_vdj_aa = 'cdr3_b_aa'
-    elif hasattr(df, 'cdr3_g_aa') and hasattr(df, 'cdr3_d_aa'):
-        # Gamma delta TCR 
-        cdr3_vj_aa = 'cdr3_g_aa'
-        cdr3_vdj_aa = 'cdr3_d_aa'
-    else:
-        raise AttributeError('No cdr3_aa found.')
-    n_shared, n_clones = df[['subject','clone_id']].nunique().values
+
+    if not hasattr(df, 'vj_aa') and not hasattr(df, 'vdj_aa'):
+        raise AttributeError('No "vj_aa" and "vdj_aa" found.')
+    n_shared, n_clones = df[['donor_id','clone_id']].nunique().values
     if skip_singletons:
         if n_clones == 1:
             return
@@ -168,8 +192,8 @@ def draw_cdr3(
         df_ = df.drop_duplicates('clone_id')
     else:
         df_ = df
-    for chain_ind, chain in enumerate([cdr3_vj_aa,cdr3_vdj_aa]):
-        cdr3 = df_[[cdr3_vj_aa,cdr3_vdj_aa]].copy()
+    for chain_ind, chain in enumerate(['vj_aa','vdj_aa']):
+        cdr3 = df_[['vj_aa','vdj_aa']].copy()
         cdr3['length'] = cdr3[chain].apply(lambda x: len(x))
         n_rows = cdr3.length.mode()[0]
         cdr3 = cdr3[cdr3.length==n_rows]
