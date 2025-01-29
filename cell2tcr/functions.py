@@ -89,6 +89,7 @@ def motifs(df, sparse=True, threshold=35, chunk_size=3000, return_distances=Fals
     
     # make tcrdist-compatible
     df.rename(columns = {v: k for k, v in new_cols.items()}, inplace=True)
+    df = df.loc[:, ~df.columns.duplicated()] # drop duplicated columns
     
     if sparse:
         tr = TCRrep(
