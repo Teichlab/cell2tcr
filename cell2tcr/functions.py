@@ -162,8 +162,8 @@ def motifs(df, sparse=True, threshold=35, chunk_size=3000, return_distances=Fals
         return tr
     else:
         # assign motif to each original cell
+        df.rename(columns = new_cols, inplace=True)
         df['motif'] = df.clone_id.map(tr.clone_df[['clone_id','motif']].set_index('clone_id').motif.to_dict())
-        df.rename(columns = new_cols, inplace=True) 
 
 def draw_cdr3(
         df, 
