@@ -39,7 +39,7 @@ def motifs(df, sparse=True, threshold=35, chunk_size=3000, return_distances=Fals
     sparse : bool. Select sparse=True implementation if more than ~1000 TCR clones are given.
     threshold : int. Threshold used to connect TCR distance matrix.
     chunk_size : int. Number of rows loaded into memory for sparse implementation.
-    return_distances: bool. Whether to return the tcrdist object that also holds the distances, or modify the initial dataframe with the new column 'motif' in-place.
+    return_distances: bool. Whether to return the tcrdist object that also holds the distances, or return the initial dataframe with the new column 'motif'.
     add_suffix: bool. Whether to add generic *01 suffix to gene names. 
     organism: str. Choose between 'human' and 'mouse'. 
     receptor_type: str. Choose between 'ab' and 'gd' for alpha-beta or gamma-delta T cells. 
@@ -89,8 +89,8 @@ def motifs(df, sparse=True, threshold=35, chunk_size=3000, return_distances=Fals
     
     # make tcrdist-compatible
     df.rename(columns = {v: k for k, v in new_cols.items()}, inplace=True)
-    df = df.loc[:, ~df.columns.duplicated()] # drop duplicated columns
-    
+    df.drop(columns=df.columns[df.columns.duplicated()], inplace=True)
+
     if sparse:
         tr = TCRrep(
             cell_df = df.drop_duplicates(subset = 'clone_id'),
@@ -164,6 +164,7 @@ def motifs(df, sparse=True, threshold=35, chunk_size=3000, return_distances=Fals
         # assign motif to each original cell
         df.rename(columns = new_cols, inplace=True)
         df['motif'] = df.clone_id.map(tr.clone_df[['clone_id','motif']].set_index('clone_id').motif.to_dict())
+        return df
 
 def draw_cdr3(
         df, 

@@ -35,7 +35,7 @@ import cell2tcr
 cell2tcr.assign_column_names(df)
 
 # infer motifs
-cell2tcr.motifs(df)
+df = cell2tcr.motifs(df)
 
 # plot largest motif <-> motif 0
 cell2tcr.draw_cdr3(df[df.motif==0])
