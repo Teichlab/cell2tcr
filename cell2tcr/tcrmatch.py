@@ -6,6 +6,7 @@ import numpy as np
 import os
 import re
 import tqdm
+import warnings
 
 # implementation based on https://github.com/IEDB/TCRMatch/blob/master/src/tcrmatch.cpp
 # matrix hardcoded in original implementation
@@ -684,15 +685,16 @@ def db_match(
     """
     # convert input to list of unique sequences
     seqs = list(np.unique(seqs))
-    # check that we have sequences that won't make tcrmatch unhappy
-    invalid_count = np.sum(
-        [len(re.findall("[^ARNDCQEGHILKMFPSTWYV]", i)) > 0 for i in seqs]
-    )
+    # Filter out invalid sequences
+    valid_chars = "ARNDCQEGHILKMFPSTWYV"
+    invalid_seqs = [seq for seq in seqs if re.search(f"[^{valid_chars}]", seq)]
+    invalid_count = len(invalid_seqs)
+
     if invalid_count > 0:
-        raise ValueError(
-            str(invalid_count)
-            + " input CDR3s have characters outside of ARNDCQEGHILKMFPSTWYV"
+        warnings.warn(
+            f"{invalid_count} input CDR3s have characters outside of {valid_chars} and will be removed."
         )
+        seqs = [seq for seq in seqs if seq not in invalid_seqs]
     # trim input sequences to match what tcrmatch does internally by default
     if trim:
         seqs_trimmed = [
