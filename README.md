@@ -24,6 +24,7 @@ pip install .
 3. Optional: Add kernel for use in Jupyter notebooks
 
 ```
+pip install ipykernel
 python -m ipykernel install --user --name cell2tcr_env
 ```
 
